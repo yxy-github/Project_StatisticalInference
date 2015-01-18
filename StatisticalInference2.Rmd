@@ -1,0 +1,72 @@
+---
+title: "Statistical Inference Project - Part 2"
+author: "yxy"
+date: "Saturday, January 17, 2015"
+output: pdf_document
+---
+
+## Part 2 Basic Inferential Data Analysis
+## Overview
+In this part of the project, the dataset "ToothGrowth" is analyzed. The data record the length of odontoblasts (teeth) in each of 10 guinea pigs at each of three dose levels of Vitamin C (0.5, 1, and 2 mg) with each of two supplement types (orange juice/OJ or ascorbic acid/VC). 
+
+## Basic Exploratory Analysis
+Data were first loaded and a simple exploratory analysis was performed. We can see that the data have 60 observations and 3 variables: len, supp, and dose. supp is a factor with two supplement types: OJ and VC.
+```{r}
+library(datasets)
+data(ToothGrowth)
+head(ToothGrowth)
+str(ToothGrowth)
+```
+
+Fig. 3 shows that the tooth length increases when the dose level increases.
+```{r, fig.width = 6, fig.height = 5}
+# Box Plots
+boxplot(len ~ supp * dose, data = ToothGrowth,  
+        col = (c("red","blue")), main = "Tooth Growth", 
+        xlab="Suppliment Type and Dose Level")
+legend('bottomright', c("OJ", "VC"),
+       fill = c("red", "blue"))
+```
+
+## Basic Summary of the Data
+The summary statistics of the data are shown below:
+```{r}
+summary(ToothGrowth)
+
+```
+
+## Compare tooth growth by supp and dose
+An independent t-test was used to compare the tooth growth when two different supplement types were administered. The results show that the 95% confidence interval is [-0.17, 7.57], which include the value 0. Also, the p-value = 0.06 is larger than 0.05. Thus, the null hypothesis that the means of the tooth growth for OJ and VC are not significantly different is accepted.
+```{r}
+# Compare tooth growth by supp
+bysupp <- split(ToothGrowth$len, ToothGrowth$supp)
+# OJ vs VC
+t.test(bysupp$OJ, bysupp$VC)
+```
+
+To compare the tooth growth for the three different dosage levels, an ANOVA could be used. As ANOVA has not been covered in this course, three independent t-tests were used. For dosage 0 and dosage 0.5, their tooth growth are significantly different. This is supported by a p-value smaller than 0.05 and a 95% confidence interval that does not include 0. 
+```{r}
+# Compare tooth growth by supp
+bydose <- split(ToothGrowth$len, ToothGrowth$dose)
+# Dosage 0.5 vs Dosage 1
+t.test(bydose$'0.5', bydose$'1')
+```
+
+For dosage 0 and dosage 2, their tooth growth are also significantly different. This is supported by the evidence that p-value < 0.05 and the 95% confidence interval does not include 0. 
+```{r}
+# Dosage 0.5 vs Dosage 2
+t.test(bydose$'0.5', bydose$'2')
+```
+
+
+For dosage 1 and dosage 2, their tooth growth are also significantly different. This is supported by the evidence that p-value < 0.05 and the 95% confidence interval does not include 0.
+```{r}
+# Dosage 0.5 vs Dosage 2
+t.test(bydose$'0.5', bydose$'2')
+```
+
+
+## Conclusions
+The first assumption made in this analysis is that this study is a randomized control trial where the guinea pigs were randomly allocated to one of the supplement type with different dosage level. Also, the data are normally distributted. Thus, an independent t-test was used to compare the tooth growth for different treatments. one or other of the different treatments under study. The results from the t-tests show that:  
+1. The mean tooth growth for the supplement type OJ and VC are not significantly different.
+2. The mean tooth growth for the different dose levels are significantly different. Further analysis shows that the tooth length is correlated with the dose level.

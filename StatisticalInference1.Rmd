@@ -1,0 +1,108 @@
+---
+title: "Statistical Inference Project - Part 1"
+author: "yxy"
+date: "Saturday, January 17, 2015"
+output: pdf_document
+---
+
+## Part 1 Simulation Exercise
+## Overview
+The main objective of this project is to investigate the exponential distribution in R and compare it with the Central Limit Theorem. 
+
+## Simulations
+The exponential distribution was simulated in R using __rexp(n, lambda)__ where __n__ is the number of observations and __lambda__ is the exponential rate. A distribution of averages of 40 exponentials with __n__ = 1000 and __lambda__ ($\lambda$) = 0.2 was generated. The R codes to simulate the distribution are as follows:
+```{r}
+set.seed(8)
+lambda <- 0.2
+nSimulation  <- 1000
+nExponential <- 40
+# Simulate the exponential distribution
+simulation <- matrix(rexp(nSimulation * nExponential, lambda), 
+                     nSimulation, nExponential)
+# Find the distribution (average across the 40 exponentals)
+data <- data.frame(mean = apply(simulation, 1, mean))
+```
+
+## Sample Mean versus Theoretical Mean
+The theoretical mean and the standard deviation of the exponential distribution are $\frac{1}{\lambda} = 5.0$ respectively. The following codes generates Fig. 1, which compares the simulated and theoretical distribution.
+```{r, fig.width = 6, fig.height = 3}
+library(ggplot2)
+# Theoretical mean
+mean_Theoretical <- 1 / lambda
+# Standard error of the mean
+std_error <- (1 / lambda / sqrt(nExponential))
+# Plot the histogram and the theoretical density
+ggplot(data, aes(x = mean)) +  
+     geom_histogram(binwidth = .2, colour = "black", fill = "#FFFF99", 
+                    aes(y = ..density..)) +
+     geom_density(alpha=.05, aes(colour = "line1"), size = 1) +
+     stat_function(fun = dnorm, aes(colour = "line2"), size = 1, 
+                   arg = list(mean = mean_Theoretical, sd = std_error)) + 
+     geom_vline(aes(xintercept = mean(mean)), color = "red", size = 1) +
+     geom_vline(aes(xintercept = mean_Theoretical), color = "blue", size = 1, 
+                linetype = "dashed") +
+     labs(x = expression("Mean"), y = expression("Density"), 
+          title = "Fig. 1 Simulated vs Theoretical Distribution") +      
+     theme(axis.text.y = element_text(colour = "black"), 
+           axis.text.x = element_text(colour = "black")) + 
+     scale_colour_manual(values = c("red","blue"), name = "Density", 
+                         labels = c("Simulation", "Theoretical")) +
+     xlim(2, 8)
+```
+
+The confidence interval for the theoretical mean when $\alpha = 0.05$  is as follows:
+```{r}
+mean_Theoretical + c(-1, 1) * qnorm(0.975) * std_error
+```
+This shows that the sample mean (5.006) is not significantly different from the theoretical mean (5.000). The comparison between the sample mean and theoretical mean is also presented in Fig. 1.
+
+
+## Sample Variance versus Theoretical Variance
+The sample variance (0.5908) is close to the theoretical variance (0.625). Fig. 1 shows that the simulated and theoretical distributions have similar variability.
+
+## Distribution
+Fig. 1 shows that the simulated distribution is approximately normal. Further, we also look at the difference between a large collection of random exponentials and the distribution of a large collection of averages of 20, 40, and 60 exponentials respectively. Their differences are demonstrated in Fig. 2. The larger the number of exponentials used, the closer the distribution to the normal distribution. This verifies the Central Limit Theorem.
+```{r, echo = FALSE, warning = FALSE}
+nExponential <- 1
+std_error_1 <- (1/lambda/sqrt(nExponential))
+simulation_1 <- matrix(rexp(nSimulation * nExponential, lambda), 
+                     nSimulation, nExponential)
+nExponential <- 20
+std_error_20 <- (1/lambda/sqrt(nExponential))
+simulation_20 <- matrix(rexp(nSimulation * nExponential, lambda), 
+                       nSimulation, nExponential)
+nExponential <- 40
+std_error_40 <- (1/lambda/sqrt(nExponential))
+simulation_40 <- matrix(rexp(nSimulation * nExponential, lambda), 
+                        nSimulation, nExponential)
+nExponential <- 60
+std_error_60 <- (1/lambda/sqrt(nExponential))
+simulation_60 <- matrix(rexp(nSimulation * nExponential, lambda), 
+                       nSimulation, nExponential)
+
+mean_sd <- data.frame(size = factor(c(1, 20, 40, 60)), 
+                      mean = c(rep(mean_Theoretical, 4)), 
+                      std = c(std_error_1,std_error_20,std_error_40,std_error_60))
+dataAll <- data.frame(mean = c(apply(simulation_1, 1, mean), 
+                               apply(simulation_20, 1, mean), 
+                               apply(simulation_40, 1, mean), 
+                               apply(simulation_60, 1, mean)), 
+                      size = factor(rep(c(1, 20, 40, 60), rep(nSimulation, 4))))
+library(plyr)
+grid <- seq(0, 10, length = 1000)
+normaldens <- ddply(mean_sd, "size", function(df) {
+     data.frame(x = grid, y = dnorm(grid, df$mean, df$std))})
+
+ggplot(dataAll, aes(mean))  + 
+     geom_histogram(binwidth = .2, colour = "black", fill = "#FFFF99", aes(y = ..density..)) +
+     geom_density(aes(color = "line1"), size = 1) + 
+     geom_line(aes(x = x, y = y, color = "line2"), data = normaldens, size = 1) +
+     geom_vline(aes(xintercept = mean_Theoretical), color="blue", size = 1, linetype = "dashed") +
+     labs(x = expression("Mean"), y = expression("Density"), 
+          title = "Fig. 2 Simulated vs Theoretical Distribution") + 
+     theme(axis.text.y = element_text(colour = "black"), 
+           axis.text.x = element_text(colour = "black")) + 
+     scale_colour_manual(values = c("red","blue"), name = "Density", 
+                         labels = c("Simulation", "Theoretical")) +
+     facet_wrap(~ size) + xlim(0, 10)
+```
